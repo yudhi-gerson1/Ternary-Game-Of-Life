@@ -19,8 +19,8 @@ A vizinhança é de 8 células (Moore) e as bordas da grade são mortas.
 1. **Nascimento.** Uma célula morta com exatamente 3 vizinhos vivos (fracos ou fortes) nasce **fraca**.
 2. **Forte.** Se tiver menos de 2 ou mais de 3 vizinhos fortes, vira fraca. Caso contrário, continua forte.
 3. **Fraco.**
-   - Com 3 ou mais vizinhos fortes, faz *upgrade* e vira forte.
-   - Senão, com menos de 2 ou mais de 3 vizinhos fracos, morre.
+   - Com 3 ou mais vizinhos vivos (fracos ou fortes), faz *upgrade* e vira forte.
+   - Senão, com menos de 2 vizinhos fracos, morre.
    - Senão, continua fraco.
 4. **Escudo (Still Life).** Um fraco no centro que **já era fraco na geração anterior** forma um escudo se estiver cercado por um destes padrões:
 
@@ -64,6 +64,8 @@ Uma divergência só é contada quando muda vivo contra morto; uma diferença s�
 ## Limitações conhecidas
 
 - A grade é quadrada, com tamanho personalizável (de 8 a 200 células de lado; o padrão é 28) e bordas mortas (não é toroidal).
-- A regra do forte conta só vizinhos fortes, e a do fraco conta só vizinhos fracos para morrer.
+- A regra do forte conta só vizinhos fortes, e o fraco conta só vizinhos fracos para morrer; já o upgrade do fraco conta qualquer vizinho vivo.
+- Um fraco com 4 ou mais vizinhos vivos também faz upgrade (a regra do upgrade tem prioridade sobre a de superpopulação).
+- Por causa do upgrade, um universo só de fracos não reproduz o Conway exatamente: um fraco com 3 vizinhos vivos vira forte. A relação de inclusão com o Conway, e a turing-completude que viria dela, não vale mais por esse caminho.
 - O escudo congela por decreto, em vez de o Still Life surgir da própria dinâmica; é a parte que mais se afasta de um autômato celular puro.
 - Ainda não foram feitos experimentos longos para catalogar osciladores ou naves próprios do ternário.
