@@ -53,6 +53,7 @@ Abra `jogo-da-vida-ternario.html` em qualquer navegador moderno.
 - **Exemplo de escudo:** carrega os três padrões do escudo para você conferir que ficam parados.
 - **Salvar / Carregar:** guarda padrões no navegador (`localStorage`), no aparelho onde você salvou.
 - **Velocidade:** controla o intervalo entre gerações.
+- **Tamanho da grade:** de 8 a 200 células de lado. Ao mudar o tamanho, o desenho atual é mantido na região que cabe e a simulação volta à geração 0. Padrões salvos lembram o tamanho em que foram feitos.
 
 ### Comparação com o Conway binário
 
@@ -62,7 +63,7 @@ Uma divergência só é contada quando muda vivo contra morto; uma diferença s�
 
 ## Limitações conhecidas
 
-- A grade é fixa, de 28×28, com bordas mortas (não é toroidal).
+- A grade é quadrada, com tamanho personalizável (de 8 a 200 células de lado; o padrão é 28) e bordas mortas (não é toroidal).
 - A regra do forte conta só vizinhos fortes, e a do fraco conta só vizinhos fracos para morrer.
 - O escudo congela por decreto, em vez de o Still Life surgir da própria dinâmica; é a parte que mais se afasta de um autômato celular puro.
 - Ainda não foram feitos experimentos longos para catalogar osciladores ou naves próprios do ternário.
