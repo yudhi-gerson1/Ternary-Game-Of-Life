@@ -16,7 +16,7 @@ button{background:var(--btn);color:var(--fg);border:1px solid var(--line);border
 button:focus-visible,input:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
 .leg{font-size:.85rem;color:var(--mut)}
 .br[aria-pressed="true"]{outline:2px solid var(--fg)}
-select{background:var(--btn);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:8px;font:inherit}
+select,input[type=number]{background:var(--btn);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:8px;font:inherit}
 </style></head>
 <body>
 <h1>Jogo da Vida Ternário</h1>
@@ -28,12 +28,13 @@ select{background:var(--btn);color:var(--fg);border:1px solid var(--line);border
 </div>
 <div class="row" role="group" aria-label="Pincel"><span class="leg">Pincel</span><button class="br" data-v="0" aria-label="Apagar (morto)">Apagar</button><button class="br" data-v="1" aria-label="Fraco">□</button><button class="br" data-v="2" aria-label="Forte">■</button><button id="sv">Salvar</button><select id="ld" aria-label="Padrões salvos"><option value="">Carregar…</option></select>
 </div>
+<div class="row"><label for="sz">Tamanho da grade</label><input id="sz" type="number" min="8" max="200" value="28" style="width:5rem"><button id="szb">Aplicar</button></div>
 <div class="row"><label for="spd">Velocidade</label><input id="spd" type="range" min="1" max="12" value="5"><label class="leg"><input type="checkbox" id="dif" checked> Marcar células vivas que o binário não teria (ponto rosa)</label><span id="gen" class="leg">Geração 0</span></div>
 <p class="leg">Vizinhança de 8 células, bordas mortas. Morto com exatamente 3 vivos nasce fraco. Forte com menos de 2 ou mais de 3 fortes vira fraco. Fraco com 3+ fortes vira forte; senão, com menos de 2 ou mais de 3 fracos, morre. Escudo: fraco no centro (já fraco na geração anterior) cercado por 8 fortes, 4 em X ou 4 em cruz congela o centro e os vizinhos.</p>
 <script>
-const N=28,cv=document.getElementById('c'),cx=cv.getContext('2d');
+let N=28;const cv=document.getElementById('c'),cx=cv.getContext('2d');
 let g=new Uint8Array(N*N),wk=new Uint8Array(N*N),fz=new Uint8Array(N*N),gen=0,timer=null,S,bn=new Uint8Array(N*N),div=null,hist=[],brush=1;
-function size(){S=Math.floor(Math.min(innerWidth-34,448)/N);cv.width=cv.height=S*N;draw()}
+function size(){S=Math.max(2,Math.floor(Math.min(innerWidth-34,448)/N));cv.width=cv.height=S*N;draw()}
 const ORTH=[[-1,0],[1,0],[0,-1],[0,1]],DIAG=[[-1,-1],[-1,1],[1,-1],[1,1]];
 const at=(a,x,y)=>x<0||y<0||x>=N||y>=N?0:a[y*N+x];
 const nf=(x,y)=>ORTH.concat(DIAG).some(([dy,dx])=>at(fz,x+dx,y+dy));
@@ -76,8 +77,8 @@ function draw(){
   for(let y=0;y<N;y++)for(let x=0;x<N;x++){
     const v=g[y*N+x];
     if(v){cx.fillStyle=v===2?'#111':'#a3a7ad';cx.fillRect(x*S,y*S,S,S)}
-    cx.strokeStyle='#e4e4e4';cx.strokeRect(x*S+.5,y*S+.5,S,S);
-    if(fz[y*N+x]&&g[y*N+x]){cx.strokeStyle='#e8740c';cx.lineWidth=2;cx.strokeRect(x*S+1.5,y*S+1.5,S-3,S-3);cx.lineWidth=1}
+    if(S>=6){cx.strokeStyle='#e4e4e4';cx.strokeRect(x*S+.5,y*S+.5,S,S)}
+    if(fz[y*N+x]&&g[y*N+x]){cx.strokeStyle='#e8740c';if(S>=6){cx.lineWidth=2;cx.strokeRect(x*S+1.5,y*S+1.5,S-3,S-3);cx.lineWidth=1}else{cx.fillStyle='#e8740c';cx.fillRect(x*S,y*S,S,S)}}
   }
   if(document.getElementById('dif').checked)for(let y=0;y<N;y++)for(let x=0;x<N;x++){const i=y*N+x;if(g[i]>0&&bn[i]===0){cx.fillStyle='#d6246e';cx.beginPath();cx.arc(x*S+S/2,y*S+S/2,S/5,0,6.3);cx.fill()}}
   document.getElementById('cmp').textContent='Comparação com Conway binário (vivo = fraco ou forte): '+(div===null?'igual ao ternário até agora.':'diverge do ternário desde a geração '+div+'.');
@@ -107,16 +108,19 @@ document.getElementById('rnd').onclick=()=>{for(let i=0;i<N*N;i++){const r=Math.
 document.getElementById('ex').onclick=()=>{
   g.fill(0);wk.fill(0);gen=0;
   const put=(cx_,cy,list)=>{g[cy*N+cx_]=1;wk[cy*N+cx_]=1;for(const[dy,dx]of list)g[(cy+dy)*N+cx_+dx]=2};
-  put(6,6,DIAG);put(14,6,ORTH);put(22,6,ORTH.concat(DIAG));sync();draw();
+  put(3,3,DIAG);if(N>=12)put(8,3,ORTH);if(N>=24)put(14,3,ORTH.concat(DIAG));sync();draw();
 };
 document.querySelectorAll('.br').forEach(b=>{b.onclick=()=>{brush=+b.dataset.v;document.querySelectorAll('.br').forEach(o=>o.setAttribute('aria-pressed',o===b))}});
 document.querySelector('.br[data-v="1"]').setAttribute('aria-pressed',true);
 let saved=[];try{saved=JSON.parse(localStorage.getItem('jvt')||'[]')}catch(e){}
 function fillSel(){const s=document.getElementById('ld');s.length=1;saved.forEach((p,i)=>s.add(new Option(p.n,i)))}
-document.getElementById('sv').onclick=()=>{saved.push({n:'Padrão '+(saved.length+1),g:Array.from(g).join('')});try{localStorage.setItem('jvt',JSON.stringify(saved))}catch(e){}fillSel()};
-document.getElementById('ld').onchange=e=>{const p=saved[e.target.value];if(!p)return;for(let i=0;i<N*N;i++){g[i]=+p.g[i];wk[i]=g[i]===1?1:0}gen=0;sync();draw();e.target.value=''};
+document.getElementById('sv').onclick=()=>{saved.push({n:'Padrão '+(saved.length+1),s:N,g:Array.from(g).join('')});try{localStorage.setItem('jvt',JSON.stringify(saved))}catch(e){}fillSel()};
+document.getElementById('ld').onchange=e=>{const p=saved[e.target.value];if(!p)return;const s=p.s||28;if(s!==N)setN(s);for(let i=0;i<N*N;i++){g[i]=+p.g[i];wk[i]=g[i]===1?1:0}gen=0;sync();draw();e.target.value=''};
 document.getElementById('back').onclick=back;
 document.getElementById('dif').onchange=draw;
+function setN(n){n=Math.max(8,Math.min(200,Math.round(n)||28));if(timer)run();const og=g,ow=wk,on=N;N=n;g=new Uint8Array(N*N);wk=new Uint8Array(N*N);fz=new Uint8Array(N*N);const m=Math.min(on,N);for(let y=0;y<m;y++)for(let x=0;x<m;x++){g[y*N+x]=og[y*on+x];wk[y*N+x]=ow[y*on+x]}gen=0;sync();document.getElementById('sz').value=N;size()}
+document.getElementById('szb').onclick=()=>setN(+document.getElementById('sz').value);
+document.getElementById('sz').onchange=()=>setN(+document.getElementById('sz').value);
 fillSel();
 addEventListener('resize',size);size();
 </script>
