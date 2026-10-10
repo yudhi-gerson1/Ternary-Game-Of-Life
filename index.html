@@ -30,7 +30,7 @@ select,input[type=number]{background:var(--btn);color:var(--fg);border:1px solid
 </div>
 <div class="row"><label for="sz">Tamanho da grade</label><input id="sz" type="number" min="8" max="200" value="28" style="width:5rem"><button id="szb">Aplicar</button></div>
 <div class="row"><label for="spd">Velocidade</label><input id="spd" type="range" min="1" max="12" value="5"><label class="leg"><input type="checkbox" id="dif" checked> Marcar células vivas que o binário não teria (ponto rosa)</label><span id="gen" class="leg">Geração 0</span></div>
-<p class="leg">Vizinhança de 8 células, bordas mortas. Morto com exatamente 3 vivos nasce fraco. Forte com menos de 2 ou mais de 3 fortes vira fraco. Fraco com 3+ fortes vira forte; senão, com menos de 2 ou mais de 3 fracos, morre. Escudo: fraco no centro (já fraco na geração anterior) cercado por 8 fortes, 4 em X ou 4 em cruz congela o centro e os vizinhos.</p>
+<p class="leg">Vizinhança de 8 células, bordas mortas. Morto com exatamente 3 vivos nasce fraco. Forte com menos de 2 ou mais de 3 fortes vira fraco. Fraco com 3 ou mais vizinhos vivos (fracos ou fortes) vira forte; senão, com menos de 2 fracos ao redor, morre. Escudo: fraco no centro (já fraco na geração anterior) cercado por 8 fortes, 4 em X ou 4 em cruz congela o centro e os vizinhos.</p>
 <script>
 let N=28;const cv=document.getElementById('c'),cx=cv.getContext('2d');
 let g=new Uint8Array(N*N),wk=new Uint8Array(N*N),fz=new Uint8Array(N*N),gen=0,timer=null,S,bn=new Uint8Array(N*N),div=null,hist=[],brush=1;
@@ -60,7 +60,7 @@ function step(){hist.push([g.slice(),wk.slice(),gen,bn.slice(),div]);if(hist.len
     if(!fz[i]){
       if(r===0){if(s+f===3&&!nf(x,y))r=1}
       else if(r===2){if(s<2||s>3)r=1}
-      else{if(s>=3)r=2;else if(f<2||f>3)r=0}
+      else{if(s+f>=3)r=2;else if(f<2||f>3)r=0}
     }
     n[i]=r;w[i]=r===1?(g[i]===1?Math.min(wk[i]+1,9):0):0;
   }
