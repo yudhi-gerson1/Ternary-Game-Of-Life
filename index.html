@@ -1,39 +1,123 @@
-<!doctype html>
-<html lang="pt-BR">
-    <head>
-        <title>Meu Site</title>
-        <meta name="author" content="Yudhi Gerson">
-    </head>
-    <body>
-        <header style="background-color:#8080ff;">
-            <h1 style="text-align:center;border:solid 5px blue;">Sobre mim (v1.1)!</h1>
-        </header>
-        <main style="background-color:#ffff80;border:solid 5px #ffff00;">
-          <article>
-            <p style="text-align:center;">Olá, eu sou o <strong>Yudhi Gerson</strong> e sou de Sololearn! Agora tem estilo nesse site!</p>
-            <h2 style="text-align:center">O que eu aprendo no sololearn?</h2>
-          </article>
-          <section style="border: solid 3px orange;">
-              <h3 style="text-align:center;color:orange;">Java</h3>
-              <p>Dizem por aí que Java é um pouco difícil quando o assunto é um Hello World. Eu estou aprendendo ele porque eu quero criar aplicativos Android.</p>
-          </section>
-          <section style="border: solid 3px cyan;">
-              <h3 style="text-align:center;color:cyan;">C++</h3>
-              <p>Ah sim, uma linguagem de programação que é usada para jogos de Unreal Engine! Eu estou aprendendo conceitos básicos para criar jogos 3d usando ele...</p>
-          </section>
-          <section style="border: solid 3px green;">
-              <h3 style="text-align:center;color:green;">Front-End</h3>
-              <p>A linguagem, ou melhor, o grupo de linguagens que estou usando agora! Eles tem 3 linguagens:</p>
-              <ol style="font-size:20px;">
-                  <li style="color:red;">HTML</li>
-                  <li style="color:blue;">CSS</li>
-                  <li style="color:orange;">JavaScript</li>
-              </ol>
-              <p>Sem dúvidas, o trio mais respeitado quando o assunto é criar sites!</p>
-          </section>
-        </main>
-        <footer style="background-color:#ff8080;border:dashed 5px red;">
-            <p style="text-align:center;">A cada nova prática eu melhoro esse código, então podem sugerir melhorias! Espero que gostem do código... <strong>Yudhi Gerson. todos os direitos reservados.</strong></p>
-        </footer>
-    </body>
-</html>
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jogo da Vida Ternário</title>
+<style>
+:root{--bg:#f6f5f2;--fg:#1c1c1c;--mut:#666;--line:#cfcdc6;--btn:#e8e6e0;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1b1d;--fg:#eee;--mut:#9a9a9a;--line:#444;--btn:#2c2c30}}
+:root[data-theme="dark"]{--bg:#1b1b1d;--fg:#eee;--mut:#9a9a9a;--line:#444;--btn:#2c2c30}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,sans-serif;padding:16px;max-width:480px;margin:0 auto}
+h1{font-size:1.25rem;margin:0 0 4px}
+p{margin:0 0 12px;color:var(--mut);font-size:.9rem}
+canvas{display:block;border:1px solid var(--line);touch-action:none;max-width:100%}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;align-items:center}
+button{background:var(--btn);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:8px 12px;font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+.leg{font-size:.85rem;color:var(--mut)}
+.br[aria-pressed="true"]{outline:2px solid var(--fg)}
+select{background:var(--btn);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:8px;font:inherit}
+</style></head>
+<body>
+<h1>Jogo da Vida Ternário</h1>
+<p>Escolha □ fraco ou ■ forte e toque ou arraste na grade para pintar. Célula sem pintura é morta; use Apagar para deixar uma célula morta. Contorno laranja = escudo (still life).</p>
+<canvas id="c"></canvas>
+<p class="leg" id="cmp" style="margin-top:8px"></p>
+<div class="row">
+<button id="play">Iniciar</button><button id="back">Voltar</button><button id="step">Passo</button><button id="rnd">Aleatório</button><button id="clr">Limpar</button><button id="ex">Exemplo de escudo</button>
+</div>
+<div class="row" role="group" aria-label="Pincel"><span class="leg">Pincel</span><button class="br" data-v="0" aria-label="Apagar (morto)">Apagar</button><button class="br" data-v="1" aria-label="Fraco">□</button><button class="br" data-v="2" aria-label="Forte">■</button><button id="sv">Salvar</button><select id="ld" aria-label="Padrões salvos"><option value="">Carregar…</option></select>
+</div>
+<div class="row"><label for="spd">Velocidade</label><input id="spd" type="range" min="1" max="12" value="5"><label class="leg"><input type="checkbox" id="dif" checked> Marcar células vivas que o binário não teria (ponto rosa)</label><span id="gen" class="leg">Geração 0</span></div>
+<p class="leg">Vizinhança de 8 células, bordas mortas. Morto com exatamente 3 vivos nasce fraco. Forte com menos de 2 ou mais de 3 fortes vira fraco. Fraco com 3+ fortes vira forte; senão, com menos de 2 ou mais de 3 fracos, morre. Escudo: fraco no centro (já fraco na geração anterior) cercado por 8 fortes, 4 em X ou 4 em cruz congela o centro e os vizinhos.</p>
+<script>
+const N=28,cv=document.getElementById('c'),cx=cv.getContext('2d');
+let g=new Uint8Array(N*N),wk=new Uint8Array(N*N),fz=new Uint8Array(N*N),gen=0,timer=null,S,bn=new Uint8Array(N*N),div=null,hist=[],brush=1;
+function size(){S=Math.floor(Math.min(innerWidth-34,448)/N);cv.width=cv.height=S*N;draw()}
+const ORTH=[[-1,0],[1,0],[0,-1],[0,1]],DIAG=[[-1,-1],[-1,1],[1,-1],[1,1]];
+const at=(a,x,y)=>x<0||y<0||x>=N||y>=N?0:a[y*N+x];
+const nf=(x,y)=>ORTH.concat(DIAG).some(([dy,dx])=>at(fz,x+dx,y+dy));
+function shields(){
+  fz.fill(0);
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    const i=y*N+x;if(g[i]!==1||wk[i]<1)continue;
+    const o=ORTH.map(d=>at(g,x+d[1],y+d[0])),d=DIAG.map(d=>at(g,x+d[1],y+d[0]));
+    const os=o.every(v=>v===2),ds=d.every(v=>v===2),o0=o.every(v=>v===0),d0=d.every(v=>v===0);
+    if((os&&ds)||(ds&&o0)||(os&&d0)){
+      fz[i]=1;
+      for(const[dy,dx]of ORTH.concat(DIAG)){const yy=y+dy,xx=x+dx;if(yy>=0&&xx>=0&&yy<N&&xx<N)fz[yy*N+xx]=1}
+    }
+  }
+}
+function step(){hist.push([g.slice(),wk.slice(),gen,bn.slice(),div]);if(hist.length>300)hist.shift();
+  shields();
+  const n=new Uint8Array(N*N),w=new Uint8Array(N*N);
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    const i=y*N+x;let s=0,f=0;
+    for(const[dy,dx]of ORTH.concat(DIAG)){const v=at(g,x+dx,y+dy);if(v===2)s++;else if(v===1)f++}
+    let r=g[i];
+    if(!fz[i]){
+      if(r===0){if(s+f===3&&!nf(x,y))r=1}
+      else if(r===2){if(s<2||s>3)r=1}
+      else{if(s>=3)r=2;else if(f<2||f>3)r=0}
+    }
+    n[i]=r;w[i]=r===1?(g[i]===1?Math.min(wk[i]+1,9):0):0;
+  }
+  bstep();g=n;wk=w;gen++;chk();draw();
+}
+function bstep(){const n=new Uint8Array(N*N);for(let y=0;y<N;y++)for(let x=0;x<N;x++){let c=0;for(const[dy,dx]of ORTH.concat(DIAG))c+=at(bn,x+dx,y+dy);const a=bn[y*N+x];n[y*N+x]=(c===3||(a&&c===2))?1:0}bn=n}
+function sync(){bn=g.map(v=>v?1:0);div=null;hist.length=0}
+function back(){const h=hist.pop();if(!h)return;[g,wk,gen,bn,div]=h;draw()}
+function chk(){if(div===null)for(let i=0;i<N*N;i++)if((g[i]>0?1:0)!==bn[i]){div=gen;break}}
+function draw(){
+  shields();
+  const dark=matchMedia('(prefers-color-scheme: dark)').matches;
+  cx.fillStyle='#fff';cx.fillRect(0,0,cv.width,cv.height);
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    const v=g[y*N+x];
+    if(v){cx.fillStyle=v===2?'#111':'#a3a7ad';cx.fillRect(x*S,y*S,S,S)}
+    cx.strokeStyle='#e4e4e4';cx.strokeRect(x*S+.5,y*S+.5,S,S);
+    if(fz[y*N+x]&&g[y*N+x]){cx.strokeStyle='#e8740c';cx.lineWidth=2;cx.strokeRect(x*S+1.5,y*S+1.5,S-3,S-3);cx.lineWidth=1}
+  }
+  if(document.getElementById('dif').checked)for(let y=0;y<N;y++)for(let x=0;x<N;x++){const i=y*N+x;if(g[i]>0&&bn[i]===0){cx.fillStyle='#d6246e';cx.beginPath();cx.arc(x*S+S/2,y*S+S/2,S/5,0,6.3);cx.fill()}}
+  document.getElementById('cmp').textContent='Comparação com Conway binário (vivo = fraco ou forte): '+(div===null?'igual ao ternário até agora.':'diverge do ternário desde a geração '+div+'.');
+  document.getElementById('gen').textContent='Geração '+gen;
+}
+function paint(x,y){if(x<0||y<0||x>=N||y>=N)return;const i=y*N+x;if(g[i]===brush)return;g[i]=brush;wk[i]=brush===1?1:0;gen=0;sync();draw()}
+function cellOf(e){const r=cv.getBoundingClientRect(),k=cv.width/r.width;return[Math.floor((e.clientX-r.left)*k/S),Math.floor((e.clientY-r.top)*k/S)]}
+cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);const[x,y]=cellOf(e);paint(x,y)});
+cv.addEventListener('pointermove',e=>{if(!(e.buttons&1))return;const[x,y]=cellOf(e);paint(x,y)});
+cv.addEventListener('click',e=>{
+  const r=cv.getBoundingClientRect(),k=cv.width/r.width;
+  const x=Math.floor((e.clientX-r.left)*k/S),y=Math.floor((e.clientY-r.top)*k/S),i=y*N+x;
+  if(x<0||y<0||x>=N||y>=N)return;
+  paint(x,y);
+});
+function run(){
+  const b=document.getElementById('play');
+  if(timer){clearInterval(timer);timer=null;b.textContent='Iniciar';return}
+  b.textContent='Pausar';
+  timer=setInterval(step,1000/document.getElementById('spd').value);
+}
+document.getElementById('spd').oninput=()=>{if(timer){run();run()}};
+document.getElementById('play').onclick=run;
+document.getElementById('step').onclick=step;
+document.getElementById('clr').onclick=()=>{g.fill(0);wk.fill(0);gen=0;sync();draw()};
+document.getElementById('rnd').onclick=()=>{for(let i=0;i<N*N;i++){const r=Math.random();g[i]=r<.6?0:r<.85?1:2;wk[i]=g[i]===1?1:0}gen=0;sync();draw()};
+document.getElementById('ex').onclick=()=>{
+  g.fill(0);wk.fill(0);gen=0;
+  const put=(cx_,cy,list)=>{g[cy*N+cx_]=1;wk[cy*N+cx_]=1;for(const[dy,dx]of list)g[(cy+dy)*N+cx_+dx]=2};
+  put(6,6,DIAG);put(14,6,ORTH);put(22,6,ORTH.concat(DIAG));sync();draw();
+};
+document.querySelectorAll('.br').forEach(b=>{b.onclick=()=>{brush=+b.dataset.v;document.querySelectorAll('.br').forEach(o=>o.setAttribute('aria-pressed',o===b))}});
+document.querySelector('.br[data-v="1"]').setAttribute('aria-pressed',true);
+let saved=[];try{saved=JSON.parse(localStorage.getItem('jvt')||'[]')}catch(e){}
+function fillSel(){const s=document.getElementById('ld');s.length=1;saved.forEach((p,i)=>s.add(new Option(p.n,i)))}
+document.getElementById('sv').onclick=()=>{saved.push({n:'Padrão '+(saved.length+1),g:Array.from(g).join('')});try{localStorage.setItem('jvt',JSON.stringify(saved))}catch(e){}fillSel()};
+document.getElementById('ld').onchange=e=>{const p=saved[e.target.value];if(!p)return;for(let i=0;i<N*N;i++){g[i]=+p.g[i];wk[i]=g[i]===1?1:0}gen=0;sync();draw();e.target.value=''};
+document.getElementById('back').onclick=back;
+document.getElementById('dif').onchange=draw;
+fillSel();
+addEventListener('resize',size);size();
+</script>
+</body></html>
