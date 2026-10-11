@@ -22,17 +22,19 @@ A vizinhança é de 8 células (Moore) e as bordas da grade são mortas.
    - Se ficar 10 gerações seguidas como fraco na mesma célula, faz *upgrade* e vira forte, e continua forte até ser rebaixado. Isso acontece uma vez só, e não a cada 10 gerações; se voltar a ser fraco, a contagem recomeça do zero.
    - Senão, com menos de 2 ou mais de 3 vizinhos vivos (fracos ou fortes), morre.
    - Senão, continua fraco.
-4. **Escudo (Still Life).** Um fraco no centro que **já era fraco na geração anterior** forma um escudo se estiver cercado por um destes padrões:
+4. **Escudo (Still Life).** Um fraco que **permanece fraco por 5 gerações** e tem **exatamente 4 vizinhos vivos** (fracos ou fortes) vira o centro de um escudo. Os 4 vizinhos viram fortes e se reorganizam no formato mais parecido com o que já estavam: **cruz** (4 vizinhos retos) ou **xadrez** (4 diagonais). Empate entre os dois vira cruz. As outras células do quadrado 3×3 ficam vazias.
 
    ```
-   ■■■     ■•■     •■•
-   ■□■     •□•     ■□■
-   ■■■     ■•■     •■•
+   ■•■     •■•     ■■■
+   •□•     ■□■     ■□■
+   ■•■     •■•     ■■■
+   xadrez  cruz    coberto
    ```
 
-   (8 fortes, 4 fortes nas diagonais com os retos mortos, ou 4 fortes em cruz com as diagonais mortas.)
-
-   Enquanto o padrão existir, o quadrado 3×3 inteiro fica congelado e nenhuma célula morta encostada no escudo pode nascer. Além disso, uma célula forte encostada no escudo (fora dele) é rebaixada para fraca. Os escudos aparecem com contorno laranja.
+   - O quadrado 3×3 inteiro fica congelado, e nenhuma célula morta encostada no escudo pode nascer.
+   - Se algo encostar num espaço vazio do escudo, de qualquer cor, aquele pixel vira parte dele, com a cor de quem encostou. Um toque de um forte, ou de dois fracos, faz o pixel virar forte; um pixel fraco que receber outro toque também vira forte. Com todos os espaços preenchidos por fortes, o escudo vira o **coberto** (8 fortes).
+   - Uma célula forte encostada no escudo (fora dele) é rebaixada para fraca.
+   - O escudo existe enquanto o centro continuar fraco. Os escudos aparecem com contorno laranja.
 
 ## O que não existe no Conway
 
@@ -50,7 +52,7 @@ Abra `jogo-da-vida-ternario.html` em qualquer navegador moderno.
 - **Pincel:** escolha Apagar, □ ou ■ e toque ou arraste na grade para pintar. Célula sem pintura é morta.
 - **Iniciar / Pausar, Passo, Voltar:** controlam a simulação. Voltar desfaz até 300 gerações.
 - **Aleatório e Limpar:** preenchem a grade com um sorteio ou a esvaziam.
-- **Exemplo de escudo:** carrega os três padrões do escudo para você conferir que ficam parados.
+- **Exemplo de escudo:** carrega um escudo xadrez, um em cruz e um coberto para você conferir que ficam parados.
 - **Salvar / Carregar:** guarda padrões no navegador (`localStorage`), no aparelho onde você salvou.
 - **Velocidade:** controla o intervalo entre gerações.
 - **Tamanho da grade:** de 8 a 200 células de lado. Ao mudar o tamanho, o desenho atual é mantido na região que cabe e a simulação volta à geração 0. Padrões salvos lembram o tamanho em que foram feitos.
@@ -67,9 +69,8 @@ Uma divergência só é contada quando muda vivo contra morto; uma diferença s�
 - A sobrevivência (do forte e do fraco) conta todos os vizinhos vivos, de qualquer tipo. O tipo só importa para o upgrade, o escudo e a proximidade do escudo. Contar só vizinhos do mesmo tipo fazia estruturas de idades diferentes (como uma colmeia) desmontarem e os fortes voltarem a ser rebaixados logo após o upgrade.
 - Células que ficam paradas por 10 gerações viram fortes (um bloco de fracos, por exemplo, vira um bloco forte). Já os objetos em movimento, como o planador de Conway, trocam de célula antes disso e continuam andando normalmente.
 - Testes em Python mostraram que um planador lançado em cheio contra qualquer um dos três escudos some, enquanto sem escudo ele segue voando. Lançado de lado, o planador acaba virando um bloco de 4 células. Foram 7 alinhamentos por escudo, sem controle sem escudo para todos eles.
+- Com a regra atual, em testes em Python, escudos se formaram em 39 de 40 sementes aleatórias de 10×10, e todas as 40 grades chegaram a um estado estável ou periódico em até 200 gerações. Nas colisões de planadores, o escudo se formou em todas, simétricas ou não: a regra não distingue colisões simétricas das assimétricas.
+- As espaçonaves de Conway (planador, nave leve, média e pesada) andam normalmente, porque suas células não duram 5 gerações no mesmo lugar e nunca formam escudos.
+- Padrões salvos não guardam quais células são centros de escudo; ao carregar, o escudo volta a existir se o formato estiver certo (cruz ou xadrez), mas o coberto precisa ser reconstruído.
 - O escudo congela por decreto, em vez de o Still Life surgir da própria dinâmica; é a parte que mais se afasta de um autômato celular puro.
 - Ainda não foram feitos experimentos longos para catalogar osciladores ou naves próprios do ternário.
-
-## Licença
-
-A definir.
