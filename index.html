@@ -30,28 +30,47 @@ select,input[type=number]{background:var(--btn);color:var(--fg);border:1px solid
 </div>
 <div class="row"><label for="sz">Tamanho da grade</label><input id="sz" type="number" min="8" max="200" value="28" style="width:5rem"><button id="szb">Aplicar</button></div>
 <div class="row"><label for="spd">Velocidade</label><input id="spd" type="range" min="1" max="12" value="5"><label class="leg"><input type="checkbox" id="dif" checked> Marcar células vivas que o binário não teria (ponto rosa)</label><span id="gen" class="leg">Geração 0</span></div>
-<p class="leg">Vizinhança de 8 células, bordas mortas. Morto com exatamente 3 vivos nasce fraco. Forte com menos de 2 ou mais de 3 vizinhos vivos vira fraco. Fraco que fica 10 gerações seguidas como fraco na mesma célula vira forte e assim permanece até ser rebaixado (a contagem não se repete a cada 10 gerações); senão, com menos de 2 ou mais de 3 vizinhos vivos, morre. Escudo: fraco no centro (já fraco na geração anterior) cercado por 8 fortes, 4 em X ou 4 em cruz congela o centro e os vizinhos, e um forte encostado no escudo (fora dele) vira fraco.</p>
+<p class="leg">Vizinhança de 8 células, bordas mortas. Morto com exatamente 3 vivos nasce fraco. Forte com menos de 2 ou mais de 3 vizinhos vivos vira fraco. Fraco que fica 10 gerações seguidas como fraco na mesma célula vira forte e assim permanece até ser rebaixado (a contagem não se repete a cada 10 gerações); senão, com menos de 2 ou mais de 3 vizinhos vivos, morre. Escudo: um fraco que permanece fraco por 5 gerações e tem exatamente 4 vizinhos vivos (fracos ou fortes) vira o centro de um escudo; os vizinhos se reorganizam no formato mais parecido, cruz (retos) ou xadrez (diagonais), e o resto fica vazio. O escudo congela o quadrado 3×3 e impede nascimentos ao redor. Se algo encostar num espaço vazio do escudo (de qualquer cor), aquele pixel vira parte dele, com a cor de quem encostou; um pixel que acumula dois fracos vira forte, até chegar a 8 fortes. Um forte encostado no escudo (fora dele) vira fraco.</p>
 <script>
 let N=28;const cv=document.getElementById('c'),cx=cv.getContext('2d');
-let g=new Uint8Array(N*N),wk=new Uint8Array(N*N),fz=new Uint8Array(N*N),gen=0,timer=null,S,bn=new Uint8Array(N*N),div=null,hist=[],brush=1;
+let g=new Uint8Array(N*N),wk=new Uint8Array(N*N),fz=new Uint8Array(N*N),sc=new Uint8Array(N*N),gen=0,timer=null,S,bn=new Uint8Array(N*N),div=null,hist=[],brush=1;
 function size(){S=Math.max(2,Math.floor(Math.min(innerWidth-34,448)/N));cv.width=cv.height=S*N;draw()}
 const ORTH=[[-1,0],[1,0],[0,-1],[0,1]],DIAG=[[-1,-1],[-1,1],[1,-1],[1,1]];
 const at=(a,x,y)=>x<0||y<0||x>=N||y>=N?0:a[y*N+x];
 const nf=(x,y)=>ORTH.concat(DIAG).some(([dy,dx])=>at(fz,x+dx,y+dy));
-function shields(){
+function frz(){
   fz.fill(0);
   for(let y=0;y<N;y++)for(let x=0;x<N;x++){
-    const i=y*N+x;if(g[i]!==1||wk[i]<1)continue;
-    const o=ORTH.map(d=>at(g,x+d[1],y+d[0])),d=DIAG.map(d=>at(g,x+d[1],y+d[0]));
-    const os=o.every(v=>v===2),ds=d.every(v=>v===2),o0=o.every(v=>v===0),d0=d.every(v=>v===0);
-    if((os&&ds)||(ds&&o0)||(os&&d0)){
-      fz[i]=1;
-      for(const[dy,dx]of ORTH.concat(DIAG)){const yy=y+dy,xx=x+dx;if(yy>=0&&xx>=0&&yy<N&&xx<N)fz[yy*N+xx]=1}
-    }
+    const i=y*N+x;if(!sc[i])continue;
+    if(g[i]!==1){sc[i]=0;continue}
+    for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const yy=y+dy,xx=x+dx;if(yy>=0&&xx>=0&&yy<N&&xx<N)fz[yy*N+xx]=1}
   }
 }
-function step(){hist.push([g.slice(),wk.slice(),gen,bn.slice(),div]);if(hist.length>300)hist.shift();
-  shields();
+function form(){
+  frz();
+  const g0=g.slice(),cz=fz.slice(),hits=[];
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    const i=y*N+x;if(g0[i]!==1||wk[i]<5||fz[i])continue;
+    let c=0;for(const[dy,dx]of ORTH.concat(DIAG))if(at(g0,x+dx,y+dy)>0)c++;
+    if(c===4)hits.push([x,y]);
+  }
+  for(const[x,y]of hits){
+    let ok=x>=1&&y>=1&&x<N-1&&y<N-1;
+    for(let dy=-1;dy<=1&&ok;dy++)for(let dx=-1;dx<=1;dx++)if(cz[(y+dy)*N+x+dx]){ok=false;break}
+    if(!ok)continue;
+    let o=0,d=0;
+    for(const[dy,dx]of ORTH)if(at(g0,x+dx,y+dy)>0)o++;
+    for(const[dy,dx]of DIAG)if(at(g0,x+dx,y+dy)>0)d++;
+    const shape=o>=d?ORTH:DIAG,other=o>=d?DIAG:ORTH;
+    for(const[dy,dx]of shape)g[(y+dy)*N+x+dx]=2;
+    for(const[dy,dx]of other)g[(y+dy)*N+x+dx]=0;
+    wk[y*N+x]=1;sc[y*N+x]=1;
+    for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)cz[(y+dy)*N+x+dx]=1;
+  }
+  frz();
+}
+function step(){hist.push([g.slice(),wk.slice(),gen,bn.slice(),div,sc.slice()]);if(hist.length>300)hist.shift();
+  form();
   const n=new Uint8Array(N*N),w=new Uint8Array(N*N);
   for(let y=0;y<N;y++)for(let x=0;x<N;x++){
     const i=y*N+x;let s=0,f=0;
@@ -64,14 +83,25 @@ function step(){hist.push([g.slice(),wk.slice(),gen,bn.slice(),div]);if(hist.len
     }
     n[i]=r;w[i]=r===1?(g[i]===1?Math.min(wk[i]+1,9):0):0;
   }
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    if(!sc[y*N+x])continue;
+    for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+      if(!dx&&!dy)continue;
+      const ex=x+dx,ey=y+dy,e=ey*N+ex;if(g[e]===2)continue;
+      let ws=0,ss=0;
+      for(const[ay,ax]of ORTH.concat(DIAG)){const px=ex+ax,py=ey+ay;if(Math.abs(px-x)<=1&&Math.abs(py-y)<=1)continue;const v=at(g,px,py);if(v===1)ws++;else if(v===2)ss++}
+      if(g[e]===0){if(ss>=1||ws>=2){n[e]=2;w[e]=0}else if(ws===1){n[e]=1;w[e]=0}}
+      else if(ss>=1||ws>=1){n[e]=2;w[e]=0}
+    }
+  }
   bstep();g=n;wk=w;gen++;chk();draw();
 }
 function bstep(){const n=new Uint8Array(N*N);for(let y=0;y<N;y++)for(let x=0;x<N;x++){let c=0;for(const[dy,dx]of ORTH.concat(DIAG))c+=at(bn,x+dx,y+dy);const a=bn[y*N+x];n[y*N+x]=(c===3||(a&&c===2))?1:0}bn=n}
 function sync(){bn=g.map(v=>v?1:0);div=null;hist.length=0}
-function back(){const h=hist.pop();if(!h)return;[g,wk,gen,bn,div]=h;draw()}
+function back(){const h=hist.pop();if(!h)return;[g,wk,gen,bn,div,sc]=h;draw()}
 function chk(){if(div===null)for(let i=0;i<N*N;i++)if((g[i]>0?1:0)!==bn[i]){div=gen;break}}
 function draw(){
-  shields();
+  frz();
   const dark=matchMedia('(prefers-color-scheme: dark)').matches;
   cx.fillStyle='#fff';cx.fillRect(0,0,cv.width,cv.height);
   for(let y=0;y<N;y++)for(let x=0;x<N;x++){
@@ -103,11 +133,11 @@ function run(){
 document.getElementById('spd').oninput=()=>{if(timer){run();run()}};
 document.getElementById('play').onclick=run;
 document.getElementById('step').onclick=step;
-document.getElementById('clr').onclick=()=>{g.fill(0);wk.fill(0);gen=0;sync();draw()};
-document.getElementById('rnd').onclick=()=>{for(let i=0;i<N*N;i++){const r=Math.random();g[i]=r<.6?0:r<.85?1:2;wk[i]=g[i]===1?1:0}gen=0;sync();draw()};
+document.getElementById('clr').onclick=()=>{g.fill(0);wk.fill(0);sc.fill(0);gen=0;sync();draw()};
+document.getElementById('rnd').onclick=()=>{sc.fill(0);for(let i=0;i<N*N;i++){const r=Math.random();g[i]=r<.6?0:r<.85?1:2;wk[i]=g[i]===1?1:0}gen=0;sync();draw()};
 document.getElementById('ex').onclick=()=>{
-  g.fill(0);wk.fill(0);gen=0;
-  const put=(cx_,cy,list)=>{g[cy*N+cx_]=1;wk[cy*N+cx_]=1;for(const[dy,dx]of list)g[(cy+dy)*N+cx_+dx]=2};
+  g.fill(0);wk.fill(0);sc.fill(0);gen=0;
+  const put=(cx_,cy,list)=>{g[cy*N+cx_]=1;wk[cy*N+cx_]=1;sc[cy*N+cx_]=1;for(const[dy,dx]of list)g[(cy+dy)*N+cx_+dx]=2};
   put(3,3,DIAG);if(N>=12)put(8,3,ORTH);if(N>=24)put(14,3,ORTH.concat(DIAG));sync();draw();
 };
 document.querySelectorAll('.br').forEach(b=>{b.onclick=()=>{brush=+b.dataset.v;document.querySelectorAll('.br').forEach(o=>o.setAttribute('aria-pressed',o===b))}});
@@ -115,10 +145,10 @@ document.querySelector('.br[data-v="1"]').setAttribute('aria-pressed',true);
 let saved=[];try{saved=JSON.parse(localStorage.getItem('jvt')||'[]')}catch(e){}
 function fillSel(){const s=document.getElementById('ld');s.length=1;saved.forEach((p,i)=>s.add(new Option(p.n,i)))}
 document.getElementById('sv').onclick=()=>{saved.push({n:'Padrão '+(saved.length+1),s:N,g:Array.from(g).join('')});try{localStorage.setItem('jvt',JSON.stringify(saved))}catch(e){}fillSel()};
-document.getElementById('ld').onchange=e=>{const p=saved[e.target.value];if(!p)return;const s=p.s||28;if(s!==N)setN(s);for(let i=0;i<N*N;i++){g[i]=+p.g[i];wk[i]=g[i]===1?1:0}gen=0;sync();draw();e.target.value=''};
+document.getElementById('ld').onchange=e=>{const p=saved[e.target.value];if(!p)return;const s=p.s||28;if(s!==N)setN(s);sc.fill(0);for(let i=0;i<N*N;i++){g[i]=+p.g[i];wk[i]=g[i]===1?1:0}gen=0;sync();draw();e.target.value=''};
 document.getElementById('back').onclick=back;
 document.getElementById('dif').onchange=draw;
-function setN(n){n=Math.max(8,Math.min(200,Math.round(n)||28));if(timer)run();const og=g,ow=wk,on=N;N=n;g=new Uint8Array(N*N);wk=new Uint8Array(N*N);fz=new Uint8Array(N*N);const m=Math.min(on,N);for(let y=0;y<m;y++)for(let x=0;x<m;x++){g[y*N+x]=og[y*on+x];wk[y*N+x]=ow[y*on+x]}gen=0;sync();document.getElementById('sz').value=N;size()}
+function setN(n){n=Math.max(8,Math.min(200,Math.round(n)||28));if(timer)run();const og=g,ow=wk,osc=sc,on=N;N=n;g=new Uint8Array(N*N);wk=new Uint8Array(N*N);fz=new Uint8Array(N*N);sc=new Uint8Array(N*N);const m=Math.min(on,N);for(let y=0;y<m;y++)for(let x=0;x<m;x++){g[y*N+x]=og[y*on+x];wk[y*N+x]=ow[y*on+x];sc[y*N+x]=osc[y*on+x]}gen=0;sync();document.getElementById('sz').value=N;size()}
 document.getElementById('szb').onclick=()=>setN(+document.getElementById('sz').value);
 document.getElementById('sz').onchange=()=>setN(+document.getElementById('sz').value);
 fillSel();
