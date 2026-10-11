@@ -19,8 +19,8 @@ A vizinhança é de 8 células (Moore) e as bordas da grade são mortas.
 1. **Nascimento.** Uma célula morta com exatamente 3 vizinhos vivos (fracos ou fortes) nasce **fraca**.
 2. **Forte.** Se tiver menos de 2 ou mais de 3 vizinhos fortes, vira fraca. Caso contrário, continua forte.
 3. **Fraco.**
-   - Com 3 ou mais vizinhos vivos (fracos ou fortes), faz *upgrade* e vira forte.
-   - Senão, com menos de 2 vizinhos fracos, morre.
+   - Se ficar 10 gerações seguidas como fraco na mesma célula, faz *upgrade* e vira forte, e continua forte até ser rebaixado. Isso acontece uma vez só, e não a cada 10 gerações; se voltar a ser fraco, a contagem recomeça do zero.
+   - Senão, com menos de 2 ou mais de 3 vizinhos fracos, morre.
    - Senão, continua fraco.
 4. **Escudo (Still Life).** Um fraco no centro que **já era fraco na geração anterior** forma um escudo se estiver cercado por um destes padrões:
 
@@ -32,7 +32,7 @@ A vizinhança é de 8 células (Moore) e as bordas da grade são mortas.
 
    (8 fortes, 4 fortes nas diagonais com os retos mortos, ou 4 fortes em cruz com as diagonais mortas.)
 
-   Enquanto o padrão existir, o quadrado 3×3 inteiro fica congelado e nenhuma célula morta encostada no escudo pode nascer. Os escudos aparecem com contorno laranja.
+   Enquanto o padrão existir, o quadrado 3×3 inteiro fica congelado e nenhuma célula morta encostada no escudo pode nascer. Além disso, uma célula forte encostada no escudo (fora dele) é rebaixada para fraca. Os escudos aparecem com contorno laranja.
 
 ## O que não existe no Conway
 
@@ -64,8 +64,12 @@ Uma divergência só é contada quando muda vivo contra morto; uma diferença s�
 ## Limitações conhecidas
 
 - A grade é quadrada, com tamanho personalizável (de 8 a 200 células de lado; o padrão é 28) e bordas mortas (não é toroidal).
-- A regra do forte conta só vizinhos fortes, e o fraco conta só vizinhos fracos para morrer; já o upgrade do fraco conta qualquer vizinho vivo.
-- Um fraco com 4 ou mais vizinhos vivos também faz upgrade (a regra do upgrade tem prioridade sobre a de superpopulação).
-- Por causa do upgrade, um universo só de fracos não reproduz o Conway exatamente: um fraco com 3 vizinhos vivos vira forte. A relação de inclusão com o Conway, e a turing-completude que viria dela, não vale mais por esse caminho.
+- A regra do forte conta só vizinhos fortes, e o fraco conta só vizinhos fracos para morrer.
+- Células que ficam paradas por 10 gerações viram fortes (um bloco de fracos, por exemplo, vira um bloco forte). Já os objetos em movimento, como o planador de Conway, trocam de célula antes disso e continuam andando normalmente.
+- Testes em Python mostraram que um planador lançado em cheio contra qualquer um dos três escudos some, enquanto sem escudo ele segue voando. Lançado de lado, o planador acaba virando um bloco de 4 células. Foram 7 alinhamentos por escudo, sem controle sem escudo para todos eles.
 - O escudo congela por decreto, em vez de o Still Life surgir da própria dinâmica; é a parte que mais se afasta de um autômato celular puro.
 - Ainda não foram feitos experimentos longos para catalogar osciladores ou naves próprios do ternário.
+
+## Licença
+
+A definir.
