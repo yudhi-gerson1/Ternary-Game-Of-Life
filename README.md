@@ -50,6 +50,7 @@ A vizinhança é de 8 células (Moore) e as bordas da grade são mortas.
 Abra `jogo-da-vida-ternario.html` em qualquer navegador moderno.
 
 - **Pincel:** escolha Apagar, □ ou ■ e toque ou arraste na grade para pintar. Célula sem pintura é morta.
+- **Escudos à mão:** os pincéis **Escudo ✚** (cruz), **Escudo ✖** (xadrez) e **Coberto** colocam um escudo pronto onde você tocar, sem passar pelas regras de formação. Depois você pode pintar fracos ou fortes nos espaços vazios para montar qualquer uma das configurações. Apagar o centro desfaz o escudo. O escudo precisa caber inteiro na grade (não dá para colocá-lo na borda).
 - **Iniciar / Pausar, Passo, Voltar:** controlam a simulação. Voltar desfaz até 300 gerações.
 - **Aleatório e Limpar:** preenchem a grade com um sorteio ou a esvaziam.
 - **Exemplo de escudo:** carrega um escudo xadrez, um em cruz e um coberto para você conferir que ficam parados.
@@ -71,7 +72,7 @@ Uma divergência só é contada quando muda vivo contra morto; uma diferença s�
 - Testes em Python mostraram que um planador lançado em cheio contra qualquer um dos três escudos some, enquanto sem escudo ele segue voando. Lançado de lado, o planador acaba virando um bloco de 4 células. Foram 7 alinhamentos por escudo, sem controle sem escudo para todos eles.
 - Com a regra atual, em testes em Python, escudos se formaram em 39 de 40 sementes aleatórias de 10×10, e todas as 40 grades chegaram a um estado estável ou periódico em até 200 gerações. Nas colisões de planadores, o escudo se formou em todas, simétricas ou não: a regra não distingue colisões simétricas das assimétricas.
 - As espaçonaves de Conway (planador, nave leve, média e pesada) andam normalmente, porque suas células não duram 5 gerações no mesmo lugar e nunca formam escudos.
-- Padrões salvos não guardam quais células são centros de escudo; ao carregar, o escudo volta a existir se o formato estiver certo (cruz ou xadrez), mas o coberto precisa ser reconstruído.
+- Padrões salvos guardam também quais células são centros de escudo. Padrões salvos antes dessa versão não os guardam, e nesse caso o escudo volta a existir só se o formato for uma cruz ou um xadrez que cumpra a regra de formação.
 - O escudo congela por decreto, em vez de o Still Life surgir da própria dinâmica; é a parte que mais se afasta de um autômato celular puro.
 - Ainda não foram feitos experimentos longos para catalogar osciladores ou naves próprios do ternário.
 
