@@ -20,13 +20,13 @@ select,input[type=number]{background:var(--btn);color:var(--fg);border:1px solid
 </style></head>
 <body>
 <h1>Jogo da Vida Ternário</h1>
-<p>Escolha □ fraco ou ■ forte e toque ou arraste na grade para pintar. Célula sem pintura é morta; use Apagar para deixar uma célula morta. Contorno laranja = escudo (still life).</p>
+<p>Escolha □ fraco ou ■ forte e toque ou arraste na grade para pintar; os pincéis de escudo colocam um escudo pronto onde você tocar. Célula sem pintura é morta; use Apagar para deixar uma célula morta. Contorno laranja = escudo (still life).</p>
 <canvas id="c"></canvas>
 <p class="leg" id="cmp" style="margin-top:8px"></p>
 <div class="row">
 <button id="play">Iniciar</button><button id="back">Voltar</button><button id="step">Passo</button><button id="rnd">Aleatório</button><button id="clr">Limpar</button><button id="ex">Exemplo de escudo</button>
 </div>
-<div class="row" role="group" aria-label="Pincel"><span class="leg">Pincel</span><button class="br" data-v="0" aria-label="Apagar (morto)">Apagar</button><button class="br" data-v="1" aria-label="Fraco">□</button><button class="br" data-v="2" aria-label="Forte">■</button><button id="sv">Salvar</button><select id="ld" aria-label="Padrões salvos"><option value="">Carregar…</option></select>
+<div class="row" role="group" aria-label="Pincel"><span class="leg">Pincel</span><button class="br" data-v="0" aria-label="Apagar (morto)">Apagar</button><button class="br" data-v="1" aria-label="Fraco">□</button><button class="br" data-v="2" aria-label="Forte">■</button><button class="br" data-v="3" aria-label="Escudo em cruz">Escudo ✚</button><button class="br" data-v="4" aria-label="Escudo xadrez">Escudo ✖</button><button class="br" data-v="5" aria-label="Escudo coberto">Coberto</button><button id="sv">Salvar</button><select id="ld" aria-label="Padrões salvos"><option value="">Carregar…</option></select>
 </div>
 <div class="row"><label for="sz">Tamanho da grade</label><input id="sz" type="number" min="8" max="200" value="28" style="width:5rem"><button id="szb">Aplicar</button></div>
 <div class="row"><label for="spd">Velocidade</label><input id="spd" type="range" min="1" max="12" value="5"><label class="leg"><input type="checkbox" id="dif" checked> Marcar células vivas que o binário não teria (ponto rosa)</label><span id="gen" class="leg">Geração 0</span></div>
@@ -114,10 +114,23 @@ function draw(){
   document.getElementById('cmp').textContent='Comparação com Conway binário (vivo = fraco ou forte): '+(div===null?'igual ao ternário até agora.':'diverge do ternário desde a geração '+div+'.');
   document.getElementById('gen').textContent='Geração '+gen;
 }
-function paint(x,y){if(x<0||y<0||x>=N||y>=N)return;const i=y*N+x;if(g[i]===brush)return;g[i]=brush;wk[i]=brush===1?1:0;gen=0;sync();draw()}
+function paint(x,y){
+  if(x<0||y<0||x>=N||y>=N)return;
+  const i=y*N+x;
+  if(brush>=3){
+    if(x<1||y<1||x>=N-1||y>=N-1)return;
+    const L=brush===3?ORTH:brush===4?DIAG:ORTH.concat(DIAG);
+    if(sc[i]&&g[i]===1){let same=true;for(const[dy,dx]of ORTH.concat(DIAG)){const want=L.some(d=>d[0]===dy&&d[1]===dx)?2:0;if(g[(y+dy)*N+x+dx]!==want)same=false}if(same)return}
+    for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const j=(y+dy)*N+x+dx;g[j]=0;wk[j]=0;sc[j]=0}
+    g[i]=1;wk[i]=5;sc[i]=1;
+    for(const[dy,dx]of L)g[(y+dy)*N+x+dx]=2;
+    gen=0;sync();draw();return;
+  }
+  if(g[i]===brush)return;g[i]=brush;wk[i]=brush===1?1:0;gen=0;sync();draw()
+}
 function cellOf(e){const r=cv.getBoundingClientRect(),k=cv.width/r.width;return[Math.floor((e.clientX-r.left)*k/S),Math.floor((e.clientY-r.top)*k/S)]}
 cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);const[x,y]=cellOf(e);paint(x,y)});
-cv.addEventListener('pointermove',e=>{if(!(e.buttons&1))return;const[x,y]=cellOf(e);paint(x,y)});
+cv.addEventListener('pointermove',e=>{if(!(e.buttons&1)||brush>=3)return;const[x,y]=cellOf(e);paint(x,y)});
 cv.addEventListener('click',e=>{
   const r=cv.getBoundingClientRect(),k=cv.width/r.width;
   const x=Math.floor((e.clientX-r.left)*k/S),y=Math.floor((e.clientY-r.top)*k/S),i=y*N+x;
@@ -144,8 +157,8 @@ document.querySelectorAll('.br').forEach(b=>{b.onclick=()=>{brush=+b.dataset.v;d
 document.querySelector('.br[data-v="1"]').setAttribute('aria-pressed',true);
 let saved=[];try{saved=JSON.parse(localStorage.getItem('jvt')||'[]')}catch(e){}
 function fillSel(){const s=document.getElementById('ld');s.length=1;saved.forEach((p,i)=>s.add(new Option(p.n,i)))}
-document.getElementById('sv').onclick=()=>{saved.push({n:'Padrão '+(saved.length+1),s:N,g:Array.from(g).join('')});try{localStorage.setItem('jvt',JSON.stringify(saved))}catch(e){}fillSel()};
-document.getElementById('ld').onchange=e=>{const p=saved[e.target.value];if(!p)return;const s=p.s||28;if(s!==N)setN(s);sc.fill(0);for(let i=0;i<N*N;i++){g[i]=+p.g[i];wk[i]=g[i]===1?1:0}gen=0;sync();draw();e.target.value=''};
+document.getElementById('sv').onclick=()=>{saved.push({n:'Padrão '+(saved.length+1),s:N,g:Array.from(g).join(''),c:Array.from(sc).join('')});try{localStorage.setItem('jvt',JSON.stringify(saved))}catch(e){}fillSel()};
+document.getElementById('ld').onchange=e=>{const p=saved[e.target.value];if(!p)return;const s=p.s||28;if(s!==N)setN(s);sc.fill(0);for(let i=0;i<N*N;i++){g[i]=+p.g[i];wk[i]=g[i]===1?1:0;if(p.c)sc[i]=+p.c[i]}gen=0;sync();draw();e.target.value=''};
 document.getElementById('back').onclick=back;
 document.getElementById('dif').onchange=draw;
 function setN(n){n=Math.max(8,Math.min(200,Math.round(n)||28));if(timer)run();const og=g,ow=wk,osc=sc,on=N;N=n;g=new Uint8Array(N*N);wk=new Uint8Array(N*N);fz=new Uint8Array(N*N);sc=new Uint8Array(N*N);const m=Math.min(on,N);for(let y=0;y<m;y++)for(let x=0;x<m;x++){g[y*N+x]=og[y*on+x];wk[y*N+x]=ow[y*on+x];sc[y*N+x]=osc[y*on+x]}gen=0;sync();document.getElementById('sz').value=N;size()}
