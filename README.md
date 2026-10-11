@@ -17,10 +17,10 @@ Autor: Yudhi Gerson
 A vizinhança é de 8 células (Moore) e as bordas da grade são mortas.
 
 1. **Nascimento.** Uma célula morta com exatamente 3 vizinhos vivos (fracos ou fortes) nasce **fraca**.
-2. **Forte.** Se tiver menos de 2 ou mais de 3 vizinhos fortes, vira fraca. Caso contrário, continua forte.
+2. **Forte.** Se tiver menos de 2 ou mais de 3 vizinhos vivos (fracos ou fortes), vira fraca. Caso contrário, continua forte.
 3. **Fraco.**
    - Se ficar 10 gerações seguidas como fraco na mesma célula, faz *upgrade* e vira forte, e continua forte até ser rebaixado. Isso acontece uma vez só, e não a cada 10 gerações; se voltar a ser fraco, a contagem recomeça do zero.
-   - Senão, com menos de 2 ou mais de 3 vizinhos fracos, morre.
+   - Senão, com menos de 2 ou mais de 3 vizinhos vivos (fracos ou fortes), morre.
    - Senão, continua fraco.
 4. **Escudo (Still Life).** Um fraco no centro que **já era fraco na geração anterior** forma um escudo se estiver cercado por um destes padrões:
 
@@ -64,7 +64,7 @@ Uma divergência só é contada quando muda vivo contra morto; uma diferença s�
 ## Limitações conhecidas
 
 - A grade é quadrada, com tamanho personalizável (de 8 a 200 células de lado; o padrão é 28) e bordas mortas (não é toroidal).
-- A regra do forte conta só vizinhos fortes, e o fraco conta só vizinhos fracos para morrer.
+- A sobrevivência (do forte e do fraco) conta todos os vizinhos vivos, de qualquer tipo. O tipo só importa para o upgrade, o escudo e a proximidade do escudo. Contar só vizinhos do mesmo tipo fazia estruturas de idades diferentes (como uma colmeia) desmontarem e os fortes voltarem a ser rebaixados logo após o upgrade.
 - Células que ficam paradas por 10 gerações viram fortes (um bloco de fracos, por exemplo, vira um bloco forte). Já os objetos em movimento, como o planador de Conway, trocam de célula antes disso e continuam andando normalmente.
 - Testes em Python mostraram que um planador lançado em cheio contra qualquer um dos três escudos some, enquanto sem escudo ele segue voando. Lançado de lado, o planador acaba virando um bloco de 4 células. Foram 7 alinhamentos por escudo, sem controle sem escudo para todos eles.
 - O escudo congela por decreto, em vez de o Still Life surgir da própria dinâmica; é a parte que mais se afasta de um autômato celular puro.
