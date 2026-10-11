@@ -74,3 +74,25 @@ Uma divergência só é contada quando muda vivo contra morto; uma diferença s�
 - Padrões salvos não guardam quais células são centros de escudo; ao carregar, o escudo volta a existir se o formato estiver certo (cruz ou xadrez), mas o coberto precisa ser reconstruído.
 - O escudo congela por decreto, em vez de o Still Life surgir da própria dinâmica; é a parte que mais se afasta de um autômato celular puro.
 - Ainda não foram feitos experimentos longos para catalogar osciladores ou naves próprios do ternário.
+
+## Licença
+
+Este projeto é licenciado sob a **Apache License 2.0**.
+
+```
+Copyright 2026 Yudhi Gerson
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```
+
+O texto completo da licença está em <https://www.apache.org/licenses/LICENSE-2.0> e deve ser incluído no repositório como um arquivo `LICENSE`.
